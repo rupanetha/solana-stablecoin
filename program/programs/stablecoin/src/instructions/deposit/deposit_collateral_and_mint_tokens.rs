@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::{associated_token::AssociatedToken, token::spl_token::state::is_initialized_account, token_interface::{Mint, Token2022, TokenAccount}};
 use pyth_solana_receiver_sdk::price_update::PriceUpdateV2;
 
-use crate::{Collateral, Config, SEED_COLLATERAL_ACCOUNT, SEED_CONFIG_ACCOUNT, SEED_SOL_ACCOUNT};
+use crate::{Collateral, Config, SEED_COLLATERAL_ACCOUNT, SEED_CONFIG_ACCOUNT, SEED_SOL_ACCOUNT, deposit_sol, mint_tokens};
 
 #[derive(Accounts)]
 pub struct DepositCollateralAndMintTokens<'info> {
@@ -66,6 +66,21 @@ pub fn process_deposit_collateral_and_mint_tokens(
         collateral_account.bump = ctx.bumps.collateral_account;
         collateral_account.bump_sol_account = ctx.bumps.sol_account;
     }
+
+    deposit_sol(
+        &ctx.accounts.depositor,
+        &ctx.accounts.sol_account,
+        &ctx.accounts.system_program,
+        amount_collateral,
+    )?;
+
+    mint_tokens(
+        &ctx.accounts.mint_account,
+        &ctx.accounts.token_account,
+        &ctx.accounts.token_program,
+        amount_to_mint,
+        ctx.accounts.config_account.bump_mint_account,
+    )?;
 
     Ok(())
 }
